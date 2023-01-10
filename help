@@ -1,0 +1,38 @@
+Welcome to EditPy.
+
+
+Generic:
+           esc: enter/exit command mode
+       up/down: scroll up/down
+    left/right: move caret left/right
+     ctrl+left: increase selection to left
+    ctrl+right: increase selection to right
+
+Command Mode:
+         enter: input command
+             a: select all
+    h[<t>]/<r>: replace regex <r> with forward-slash-less text <t>
+     n[<path>]: create and open new file, with optional path
+     o[<path>]: open <path> or empty file
+             p: print current file
+             q: quit editor
+     s[<path>]: save or save to <path>
+             w: close file
+             ?: opens help
+      =[index]: moves caret to <index>
+
+Shortcuts:
+        ctrl+a: select all
+        ctrl+c: copy text
+        ctrl+q: quit editor
+        ctrl+n: create file
+        ctrl+o: open file
+        ctrl+s: save file
+        ctrl+v: paste text
+        ctrl+w: close file
+        ctrl+/: open help
+
+Dialogs:
+           esc: cancel action
+         enter: confirm input
+    arrow keys: move caret/select option
