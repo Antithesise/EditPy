@@ -210,7 +210,9 @@ class EditPy:
             footer = self.ellipse(self.footer + " ", self.size.columns - self.padding - 1)
             footer = footer[:self.fi] + "\x1b[7m" + footer[self.fi:self.fi + self.fs + 1] + "\x1b[27m" + footer[self.fi + self.fs + 1:]
 
-            print(end=f"\n{' ' * (self.padding - 1)}:{footer}\x1b[0m", flush=flush)
+            print(end=f"\n{' ' * (self.padding - 1)}:{footer}\x1b[0m", flush=False)
+
+        print(end="", flush=flush)
 
     @overload
     def dialog(self, why: Literal["save"]=...) -> str | None: pass
@@ -440,7 +442,7 @@ class EditPy:
 
             try:
                 while not kbhit():
-                    self.redraw()
+                    pass
 
                 key = ord(getch())
 
