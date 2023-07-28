@@ -3,15 +3,22 @@ Welcome to EditPy.
 
 Generic:
            esc: enter/exit command mode
-       up/down: scroll up/down
     left/right: move caret left/right
      ctrl+left: increase selection to left
     ctrl+right: increase selection to right
 
+Edit Mode:
+         enter: new line
+           tab: insert four spaces
+       up/down: move caret up/down
+     char keys: input character
+
 Command Mode:
          enter: input command
+       up/down: scroll up/down
              a: select all
     h[<t>]/<r>: replace regex <r> with forward-slash-less text <t>
+        m[<n>]: scroll <n> lines
      n[<path>]: create and open new file, with optional path
      o[<path>]: open <path> or empty file
              p: print current file

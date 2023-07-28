@@ -6,14 +6,24 @@ EditPy is a lightweight, text-based text editor.
 
 from platform import system
 
+try:
+    from isansitty import isansitty # type: ignore
+except ImportError:
+    from sys import stdout # type: ignore
+
+    isansitty = stdout.isatty
+
 if system() != "Windows":
     raise EnvironmentError("EditPy cannot run on this Operating System.")
+
+if not isansitty():
+    raise EnvironmentError("EditPy must be run in a TTY.")
 
 from os import get_terminal_size, remove, startfile
 from os.path import abspath, basename
 from pyperclip import copy, paste
+from re import match, split, sub
 from msvcrt import getch, kbhit
-from re import split, sub
 from time import sleep
 
 from typing import Literal, Optional, Self, Type, overload
@@ -48,7 +58,7 @@ class EditPy:
     def restore_help(self) -> None:
         try:
             with open("help", "x", encoding="utf-8") as f:
-                f.write("Welcome to EditPy.\n\n\nGeneric:\n           esc: enter/exit command mode\n       up/down: scroll up/down\n    left/right: move caret left/right\n     ctrl+left: increase selection to left\n    ctrl+right: increase selection to right\n\nCommand Mode:\n         enter: input command\n             a: select all\n    h[<t>]/<r>: replace regex <r> with forward-slash-less text <t>\n     n[<path>]: create and open new file, with optional path\n     o[<path>]: open <path> or empty file\n             p: print current file\n             q: quit editor\n     s[<path>]: save or save to <path>\n             w: close file\n             ?: opens help\n      =[index]: moves caret to <index>\n\nShortcuts:\n        ctrl+a: select all\n        ctrl+c: copy text\n        ctrl+q: quit editor\n        ctrl+n: create file\n        ctrl+o: open file\n        ctrl+s: save file\n        ctrl+v: paste text\n        ctrl+w: close file\n        ctrl+/: open help\n\nDialogs:\n           esc: cancel action\n         enter: confirm input\n    arrow keys: move caret/select option\n")
+                f.write("Welcome to EditPy.\n\n\nGeneric:\n           esc: enter/exit command mode\n    left/right: move caret left/right\n     ctrl+left: increase selection to left\n    ctrl+right: increase selection to right\n\nEdit Mode:\n         enter: new line\n           tab: insert four spaces\n       up/down: move caret up/down\n     char keys: input character\n\nCommand Mode:\n         enter: input command\n       up/down: scroll up/down\n             a: select all\n    h[<t>]/<r>: replace regex <r> with forward-slash-less text <t>\n        m[<n>]: scroll <n> lines\n     n[<path>]: create and open new file, with optional path\n     o[<path>]: open <path> or empty file\n             p: print current file\n             q: quit editor\n     s[<path>]: save or save to <path>\n             w: close file\n             ?: opens help\n      =[index]: moves caret to <index>\n\nShortcuts:\n        ctrl+a: select all\n        ctrl+c: copy text\n        ctrl+q: quit editor\n        ctrl+n: create file\n        ctrl+o: open file\n        ctrl+s: save file\n        ctrl+v: paste text\n        ctrl+w: close file\n        ctrl+/: open help\n\nDialogs:\n           esc: cancel action\n         enter: confirm input\n    arrow keys: move caret/select option\n")
 
         except FileExistsError:
             pass
@@ -373,6 +383,10 @@ class EditPy:
             if s != -1:
                 self.text = sub(args[s + 1:], args[:s], self.text)
 
+        elif cmd == "m" and args:
+            if match(r"[+-]?[1-9][0-9]*", args):
+                self.sy = max(0, min(self.lines - self.size.lines + self.mode + 1, self.sy + int(args)))
+
         elif cmd == "n":
             if not self.saved:
                 if self.dialog("close") in [False, None]:
@@ -454,8 +468,17 @@ class EditPy:
             if self.mode == 0:
                 if key == 0:
                     if code == 72: # up
-                        if self.sy > 0:
-                            self.sy -= 1
+                        if "\n" in self.text[:self.ci]:
+                            self.ci = self.text.rindex("\n", 0, self.ci)
+
+                            if "\n" in self.text[:self.ci]:
+                                self.ci = self.text.rindex("\n", 0, self.ci) + 1
+
+                            else:
+                                self.ci = 0
+
+                        else:
+                            self.ci = 0
 
                     elif code == 75 and self.ci + self.cs > 0: # left
                         if self.ci > 0:
@@ -468,8 +491,11 @@ class EditPy:
                         self.cs = 0
 
                     elif code == 80: # down
-                        if self.sy < self.lines - 1:
-                            self.sy += 1
+                        if "\n" in self.text[self.ci:]:
+                            self.ci = self.text.index("\n", self.ci) + 1
+
+                        else:
+                            self.ci = len(self.text)
 
                     elif code == 83 and self.ci < len(self.text): # delete
                         self.text = self.text[:self.ci] + self.text[self.ci + self.cs + 1:]
@@ -485,8 +511,7 @@ class EditPy:
                     elif code == 116 and self.ci + self.cs < len(self.text) - 1: # ctrl+right
                         self.cs += 1
 
-                    if code not in [72, 80]:
-                        self.scroll()
+                    self.scroll()
 
                     if code in [83]:
                         self.saved = False
@@ -601,6 +626,10 @@ class EditPy:
                 continue
 
             if key == 0:
+                if code == 72: # up
+                    if self.sy > 0:
+                        self.sy -= 1
+
                 if code == 75 and self.fi + self.fs > 0: # left
                     if self.fi > 0:
                         self.fi -= 1
@@ -610,6 +639,10 @@ class EditPy:
                 elif code == 77 and self.fi < len(self.footer): # right
                     self.fi += self.fs + 1
                     self.fs = 0
+
+                elif code == 80: # down
+                    if self.sy < self.lines - self.size.lines + 2: # self.mode is always 1 in this scope
+                        self.sy += 1                                           # so `+ self.mode + 1` -> `+ 2`
 
                 elif code == 83 and self.fi < len(self.footer): # delete
                     self.footer = self.footer[:self.fi] + self.footer[self.fi + self.fs + 1:]
