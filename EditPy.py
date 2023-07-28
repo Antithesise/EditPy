@@ -1,7 +1,7 @@
 """
 EditPy is a lightweight, text-based text editor.
 
-© 2022 GoodCoderBBoy
+© 2023 GoodCoderBBoy
 """
 
 from platform import system
@@ -9,7 +9,7 @@ from platform import system
 try:
     from isansitty import isansitty # type: ignore
 except ImportError:
-    from sys import stdout # type: ignore
+    from sys import stdout
 
     isansitty = stdout.isatty
 
