@@ -1,7 +1,7 @@
 """
 EditPy is a lightweight, text-based text editor.
 
-© 2023 GoodCoderBBoy
+© 2023 Antithesise
 """
 
 from platform import system

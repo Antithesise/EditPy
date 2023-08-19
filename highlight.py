@@ -1,7 +1,7 @@
 """
 This is EditPy's Syntax Highlighting Engine.
 
-© 2022 GoodCoderBBoy
+© 2023 Antithesise
 """
 
 from re import match, search, sub
