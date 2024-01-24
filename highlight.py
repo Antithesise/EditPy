@@ -44,6 +44,11 @@ Colours = {
 }
 
 class Patterns:
+    """
+    An Unstoppable Force meets An Immovable Object:
+    Non-Production Code and Tony the Pony.
+    """
+
     CSS = [
         (r"/\*(?:[^\*]|\*(?!/))*\*/", "comment"),
         (r"\*", "asterisk"),

@@ -225,15 +225,15 @@ class EditPy:
         print(end="", flush=flush)
 
     @overload
-    def dialog(self, why: Literal["save"]=...) -> str | None: pass
+    def dialog(self, func: Literal["save"]=...) -> str | None: pass
 
     @overload
-    def dialog(self, why: Literal["open"]=...) -> str | None: pass
+    def dialog(self, func: Literal["open"]=...) -> str | None: pass
 
     @overload
-    def dialog(self, why: Literal["close"]=...) -> bool | None: pass
+    def dialog(self, func: Literal["close"]=...) -> bool | None: pass
 
-    def dialog(self, why="save"):
+    def dialog(self, func="save"):
         msgs = {
             "save": "\x1b[2;{x}H┌──────────────────┐\x1b[3;{x}H│  Enter filepath  │\x1b[4;{x}H│ ┌──────────────┐ │\x1b[5;{x}H│ │ {n} │ │\x1b[6;{x}H│ └──────────────┘ │\x1b[7;{x}H└──────────────────┘",
             "open": "\x1b[2;{x}H┌──────────────────┐\x1b[3;{x}H│  Enter filepath  │\x1b[4;{x}H│ ┌──────────────┐ │\x1b[5;{x}H│ │ {n} │ │\x1b[6;{x}H│ └──────────────┘ │\x1b[7;{x}H└──────────────────┘",
@@ -250,15 +250,16 @@ class EditPy:
             try:
                 self.redraw(False)
 
-                if why in ["save", "open"]:
+                if func in ["save", "open"]:
                     t = self.ellipse(dv, 11, False).ljust(12)
+                    f = di - min(0, 11 - len(dv))
 
-                    print(end=msgs[why].format(
+                    print(end=msgs[func].format(
                         x=round((self.size.columns - 20) / 2),
-                        n=t[:di] + "\x1b[7m" + t[di:di + ds + 1] + "\x1b[27m" + t[di + ds + 1:]
+                        n=t[:f] + "\x1b[7m" + t[f:f + ds + 1] + "\x1b[27m" + t[f + ds + 1:]
                     ), flush=True)
 
-                elif why == "close":
+                elif func == "close":
                     print(end=msgs["close"].format(
                         x=round((self.size.columns - 20) / 2),
                         ty=("┌───┐" if di else "▗▄▄▄▖"),
@@ -269,32 +270,10 @@ class EditPy:
                         bn=("▝▀▀▀▘" if di else "└───┘")
                     ), flush=True)
 
-                while not kbhit():
-                    self.redraw(False)
-
-                    if why in ["save", "open"]:
-                        t = self.ellipse(dv, 11, False).ljust(12)
-                        f = di - min(0, 11 - len(dv))
-
-                        print(end=msgs[why].format(
-                            x=round((self.size.columns - 20) / 2),
-                            n=t[:f] + "\x1b[7m" + t[f:f + ds + 1] + "\x1b[27m" + t[f + ds + 1:]
-                        ), flush=True)
-
-                    elif why == "close":
-                        print(end=msgs["close"].format(
-                            x=round((self.size.columns - 20) / 2),
-                            ty=("┌───┐" if di else "▗▄▄▄▖"),
-                            tn=("▗▄▄▄▖" if di else "┌───┐"),
-                            my=("│ Y │" if di else "▐█\x1b[38;5;234m\x1b[48;5;251mY\x1b[0m█▌"),
-                            mn=("▐█\x1b[38;5;234m\x1b[48;5;251mN\x1b[0m█▌" if di else "│ N │"),
-                            by=("└───┘" if di else "▝▀▀▀▘"),
-                            bn=("▝▀▀▀▘" if di else "└───┘")
-                        ), flush=True)
-
                 key = ord(getch())
 
-                if key == 0:
+                if key in [0, 224]:
+                    key = 0
                     code = ord(getch())
             except KeyboardInterrupt:
                 key = 3
@@ -303,9 +282,9 @@ class EditPy:
                 return
 
             elif key in [10, 13]: # newline / carriage return
-                if why == "open" or (why == "save" and dv.rstrip("/")):
+                if func == "open" or (func == "save" and dv.rstrip("/")):
                     return dv.rstrip("/")
-                elif why == "close":
+                elif func == "close":
                     return bool(di - 1)
 
             elif key == 0:
@@ -315,17 +294,17 @@ class EditPy:
 
                     ds = 0
 
-                elif code == 77 and (di < len(dv) or why == "close"): # right
+                elif code == 77 and (di < len(dv) or func == "close"): # right
                     di += ds + 1
                     ds = 0
 
-                elif code == 83 and why in ["save", "open"]: # delete
+                elif code == 83 and func in ["save", "open"]: # delete
                     if di < len(dv):
                         dv = dv[:di] + dv[di + ds + 1:]
 
                         ds = 0
 
-                elif why in ["save", "open"]:
+                elif func in ["save", "open"]:
                     if code == 115 and di > 0: # ctrl+left
                         di -= 1
 
@@ -337,16 +316,16 @@ class EditPy:
 
             else:
                 if key == 1: # ctrl+a
-                    if why in ["save", "open"]:
+                    if func in ["save", "open"]:
                         di = 0
                         ds = len(dv) - 1
 
                 elif key == 3: # ctrl+c:
-                    if ds > 0 and why in ["save", "open"]:
+                    if ds > 0 and func in ["save", "open"]:
                         copy(dv[di:di + ds + 1])
 
                 elif key == 8: # backspace
-                    if di + ds > 0 and why in ["save", "open"]:
+                    if di + ds > 0 and func in ["save", "open"]:
                         if di > 0:
                             di -= (ds == 0)
 
@@ -355,7 +334,7 @@ class EditPy:
                         ds = 0
 
                 elif key == 22: # ctrl+v, sometimes?
-                    if why in ["save", "open"]:
+                    if func in ["save", "open"]:
                         dv = dv[:di] + sub(r"\r\n|\r|\n", "", paste()) + dv[di + ds + 1:]
 
                         ds = 0
@@ -363,7 +342,7 @@ class EditPy:
                 elif key < 32: # any other weird sequence
                     pass
 
-                elif why in ["save", "open"]:
+                elif func in ["save", "open"]:
                     dv = dv[:di] + chr(key) + dv[di + ds + (ds != 0):]
 
                     di += 1
@@ -460,7 +439,8 @@ class EditPy:
 
                 key = ord(getch())
 
-                if key == 0:
+                if key in [0, 224]:
+                    key = 0
                     code = ord(getch())
             except KeyboardInterrupt:
                 key = 3
